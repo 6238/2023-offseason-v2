@@ -77,15 +77,17 @@ public class SwerveDrive
    */
   public        SwerveController         swerveController;
   /**
-   * Trustworthiness of the internal model of how motors should be moving Measured in expected standard deviation
-   * (meters of position and degrees of rotation)
+   * Standard deviation of encoders and gyroscopes, usually should not change. (meters of position and degrees of
+   * rotation)
    */
   public        Matrix<N3, N1> stateStdDevs                                    = VecBuilder.fill(0.1,
                                                                                                  0.1,
                                                                                                  0.1);
   /**
-   * Trustworthiness of the vision system Measured in expected standard deviation (meters of position and degrees of
-   * rotation)
+   * The standard deviation of the vision measurement, for best accuracy calculate the standard deviation at 2 or more
+   * points and fit a line to it and modify this using {@link SwerveDrive#addVisionMeasurement(Pose2d, double, Matrix)}
+   * with the calculated optimal standard deviation. (Units should be meters per pixel). By optimizing this you can get
+   * vision accurate to inches instead of feet.
    */
   public        Matrix<N3, N1> visionMeasurementStdDevs                        = VecBuilder.fill(0.9,
                                                                                                  0.9,
@@ -285,6 +287,18 @@ public class SwerveDrive
   }
 
   /**
+   * Secondary method of controlling the drive base given velocity and adjusting it for field oriented use.
+   *
+   * @param velocity               Velocity of the robot desired.
+   * @param centerOfRotationMeters The center of rotation in meters, 0 is the center of the robot.
+   */
+  public void driveFieldOriented(ChassisSpeeds velocity, Translation2d centerOfRotationMeters)
+  {
+    ChassisSpeeds fieldOrientedVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(velocity, getYaw());
+    drive(fieldOrientedVelocity, centerOfRotationMeters);
+  }
+
+  /**
    * Secondary method for controlling the drivebase. Given a simple {@link ChassisSpeeds} set the swerve module states,
    * to achieve the goal.
    *
@@ -292,7 +306,79 @@ public class SwerveDrive
    */
   public void drive(ChassisSpeeds velocity)
   {
-    drive(velocity, false);
+    drive(velocity, false, new Translation2d());
+  }
+
+  /**
+   * Secondary method for controlling the drivebase. Given a simple {@link ChassisSpeeds} set the swerve module states,
+   * to achieve the goal.
+   *
+   * @param velocity               The desired robot-oriented {@link ChassisSpeeds} for the robot to achieve.
+   * @param centerOfRotationMeters The center of rotation in meters, 0 is the center of the robot.
+   */
+  public void drive(ChassisSpeeds velocity, Translation2d centerOfRotationMeters)
+  {
+    drive(velocity, false, centerOfRotationMeters);
+  }
+
+  /**
+   * The primary method for controlling the drivebase. Takes a {@link Translation2d} and a rotation rate, and calculates
+   * and commands module states accordingly. Can use either open-loop or closed-loop velocity control for the wheel
+   * velocities. Also has field- and robot-relative modes, which affect how the translation vector is used.
+   *
+   * @param translation            {@link Translation2d} that is the commanded linear velocity of the robot, in meters
+   *                               per second. In robot-relative mode, positive x is torwards the bow (front) and
+   *                               positive y is torwards port (left). In field-relative mode, positive x is away from
+   *                               the alliance wall (field North) and positive y is torwards the left wall when looking
+   *                               through the driver station glass (field West).
+   * @param rotation               Robot angular rate, in radians per second. CCW positive. Unaffected by field/robot
+   *                               relativity.
+   * @param fieldRelative          Drive mode. True for field-relative, false for robot-relative.
+   * @param isOpenLoop             Whether to use closed-loop velocity control. Set to true to disable closed-loop.
+   * @param centerOfRotationMeters The center of rotation in meters, 0 is the center of the robot.
+   */
+  public void drive(
+      Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop,
+      Translation2d centerOfRotationMeters)
+  {
+    // Creates a robot-relative ChassisSpeeds object, converting from field-relative speeds if
+    // necessary.
+    ChassisSpeeds velocity =
+        fieldRelative
+        ? ChassisSpeeds.fromFieldRelativeSpeeds(
+            translation.getX(), translation.getY(), rotation, getYaw())
+        : new ChassisSpeeds(translation.getX(), translation.getY(), rotation);
+
+    drive(velocity, isOpenLoop, centerOfRotationMeters);
+  }
+
+  /**
+   * The primary method for controlling the drivebase. Takes a {@link Translation2d} and a rotation rate, and calculates
+   * and commands module states accordingly. Can use either open-loop or closed-loop velocity control for the wheel
+   * velocities. Also has field- and robot-relative modes, which affect how the translation vector is used.
+   *
+   * @param translation   {@link Translation2d} that is the commanded linear velocity of the robot, in meters per
+   *                      second. In robot-relative mode, positive x is torwards the bow (front) and positive y is
+   *                      torwards port (left). In field-relative mode, positive x is away from the alliance wall (field
+   *                      North) and positive y is torwards the left wall when looking through the driver station glass
+   *                      (field West).
+   * @param rotation      Robot angular rate, in radians per second. CCW positive. Unaffected by field/robot
+   *                      relativity.
+   * @param fieldRelative Drive mode. True for field-relative, false for robot-relative.
+   * @param isOpenLoop    Whether to use closed-loop velocity control. Set to true to disable closed-loop.
+   */
+  public void drive(
+      Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop)
+  {
+    // Creates a robot-relative ChassisSpeeds object, converting from field-relative speeds if
+    // necessary.
+    ChassisSpeeds velocity =
+        fieldRelative
+        ? ChassisSpeeds.fromFieldRelativeSpeeds(
+            translation.getX(), translation.getY(), rotation, getYaw())
+        : new ChassisSpeeds(translation.getX(), translation.getY(), rotation);
+
+    drive(velocity, isOpenLoop, new Translation2d());
   }
 
   /**
@@ -300,10 +386,11 @@ public class SwerveDrive
    * states accordingly. Can use either open-loop or closed-loop velocity control for the wheel velocities. Also has
    * field- and robot-relative modes, which affect how the translation vector is used.
    *
-   * @param velocity   The chassis speeds to set the robot to achieve.
-   * @param isOpenLoop Whether to use closed-loop velocity control. Set to true to disable closed-loop.
+   * @param velocity               The chassis speeds to set the robot to achieve.
+   * @param isOpenLoop             Whether to use closed-loop velocity control. Set to true to disable closed-loop.
+   * @param centerOfRotationMeters The center of rotation in meters, 0 is the center of the robot.
    */
-  public void drive(ChassisSpeeds velocity, boolean isOpenLoop)
+  public void drive(ChassisSpeeds velocity, boolean isOpenLoop, Translation2d centerOfRotationMeters)
   {
 
     // Thank you to Jared Russell FRC254 for Open Loop Compensation Code
@@ -347,39 +434,11 @@ public class SwerveDrive
     }
 
     // Calculate required module states via kinematics
-    SwerveModuleState[] swerveModuleStates = kinematics.toSwerveModuleStates(velocity);
+    SwerveModuleState[] swerveModuleStates = kinematics.toSwerveModuleStates(velocity, centerOfRotationMeters);
 
     setRawModuleStates(swerveModuleStates, isOpenLoop);
   }
 
-  /**
-   * The primary method for controlling the drivebase. Takes a {@link Translation2d} and a rotation rate, and calculates
-   * and commands module states accordingly. Can use either open-loop or closed-loop velocity control for the wheel
-   * velocities. Also has field- and robot-relative modes, which affect how the translation vector is used.
-   *
-   * @param translation   {@link Translation2d} that is the commanded linear velocity of the robot, in meters per
-   *                      second. In robot-relative mode, positive x is torwards the bow (front) and positive y is
-   *                      torwards port (left). In field-relative mode, positive x is away from the alliance wall (field
-   *                      North) and positive y is torwards the left wall when looking through the driver station glass
-   *                      (field West).
-   * @param rotation      Robot angular rate, in radians per second. CCW positive. Unaffected by field/robot
-   *                      relativity.
-   * @param fieldRelative Drive mode. True for field-relative, false for robot-relative.
-   * @param isOpenLoop    Whether to use closed-loop velocity control. Set to true to disable closed-loop.
-   */
-  public void drive(
-      Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop)
-  {
-    // Creates a robot-relative ChassisSpeeds object, converting from field-relative speeds if
-    // necessary.
-    ChassisSpeeds velocity =
-        fieldRelative
-        ? ChassisSpeeds.fromFieldRelativeSpeeds(
-            translation.getX(), translation.getY(), rotation, getYaw())
-        : new ChassisSpeeds(translation.getX(), translation.getY(), rotation);
-
-    drive(velocity, isOpenLoop);
-  }
 
   /**
    * Set the maximum speeds for desaturation.
@@ -907,29 +966,14 @@ public class SwerveDrive
    * AFTER USING THIS FUNCTION!</b> <br /> To update your gyroscope readings directly use
    * {@link SwerveDrive#setGyroOffset(Rotation3d)}.
    *
-   * @param robotPose       Robot {@link Pose2d} as measured by vision.
-   * @param timestamp       Timestamp the measurement was taken as time since startup, should be taken from
-   *                        {@link Timer#getFPGATimestamp()} or similar sources.
-   * @param soft            Add vision estimate using the
-   *                        {@link SwerveDrivePoseEstimator#addVisionMeasurement(Pose2d, double)} function, or hard
-   *                        reset odometry with the given position with
-   *                        {@link edu.wpi.first.math.kinematics.SwerveDriveOdometry#resetPosition(Rotation2d,
-   *                        SwerveModulePosition[], Pose2d)}.
-   * @param trustWorthiness Trust level of vision reading when using a soft measurement, used to multiply the standard
-   *                        deviation. Set to 1 for full trust. Higher = Less Weight.
+   * @param robotPose Robot {@link Pose2d} as measured by vision.
+   * @param timestamp Timestamp the measurement was taken as time since startup, should be taken from
+   *                  {@link Timer#getFPGATimestamp()} or similar sources.
    */
-  public void addVisionMeasurement(Pose2d robotPose, double timestamp, boolean soft, double trustWorthiness)
+  public void addVisionMeasurement(Pose2d robotPose, double timestamp)
   {
     odometryLock.lock();
-    if (soft)
-    {
-      swerveDrivePoseEstimator.addVisionMeasurement(robotPose, timestamp,
-                                                    visionMeasurementStdDevs.times(1.0 / trustWorthiness));
-    } else
-    {
-      swerveDrivePoseEstimator.resetPosition(
-          robotPose.getRotation(), getModulePositions(), robotPose);
-    }
+    swerveDrivePoseEstimator.addVisionMeasurement(robotPose, timestamp);
     Pose2d newOdometry = new Pose2d(swerveDrivePoseEstimator.getEstimatedPosition().getTranslation(),
                                     robotPose.getRotation());
     odometryLock.unlock();
@@ -945,19 +989,18 @@ public class SwerveDrive
    * @param robotPose                Robot {@link Pose2d} as measured by vision.
    * @param timestamp                Timestamp the measurement was taken as time since startup, should be taken from
    *                                 {@link Timer#getFPGATimestamp()} or similar sources.
-   * @param soft                     Add vision estimate using the
-   *                                 {@link SwerveDrivePoseEstimator#addVisionMeasurement(Pose2d, double)} function, or
-   *                                 hard reset odometry with the given position with
-   *                                 {@link edu.wpi.first.math.kinematics.SwerveDriveOdometry#resetPosition(Rotation2d,
-   *                                 SwerveModulePosition[], Pose2d)}.
    * @param visionMeasurementStdDevs Vision measurement standard deviation that will be sent to the
-   *                                 {@link SwerveDrivePoseEstimator}.
+   *                                 {@link SwerveDrivePoseEstimator}.The standard deviation of the vision measurement,
+   *                                 for best accuracy calculate the standard deviation at 2 or more  points and fit a
+   *                                 line to it with the calculated optimal standard deviation. (Units should be meters
+   *                                 per pixel). By optimizing this you can get * vision accurate to inches instead of
+   *                                 feet.
    */
-  public void addVisionMeasurement(Pose2d robotPose, double timestamp, boolean soft,
+  public void addVisionMeasurement(Pose2d robotPose, double timestamp,
                                    Matrix<N3, N1> visionMeasurementStdDevs)
   {
     this.visionMeasurementStdDevs = visionMeasurementStdDevs;
-    addVisionMeasurement(robotPose, timestamp, soft, 1);
+    addVisionMeasurement(robotPose, timestamp);
   }
 
 
