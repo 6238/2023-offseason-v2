@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.ExampleCommand;
@@ -19,11 +18,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.io.File;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
-import swervelib.parser.SwerveParser;
-import swervelib.SwerveDrive;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -44,14 +40,17 @@ public class RobotContainer {
 
   XboxController driverXbox = new XboxController(0);
 
-  
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
 
-    DriveCommand driveCmd = new DriveCommand(swerveSubsystem, () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getRightY(), 0.01));
+    DriveCommand driveCmd = new DriveCommand(
+      swerveSubsystem,
+      () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01),
+      () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01),
+      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01),
+      () -> MathUtil.applyDeadband(driverXbox.getRightY(), 0.01));
 
     swerveSubsystem.setDefaultCommand(driveCmd);
   }
