@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import swervelib.parser.PIDFConfig;
-
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -21,15 +19,4 @@ public final class Constants {
 
   public static final double MAX_ANGULAR_VELOCITY = Math.PI; // Math.PI radians/sec
   public static final double MAX_SPEED = 15.68; // Feet/second
-
-  public static final class AutonFoo
-  {
-
-    public static final PIDFConfig xAutoPID     = new PIDFConfig(0.7, 0, 0);
-    public static final PIDFConfig yAutoPID     = new PIDFConfig(0.7, 0, 0);
-    public static final PIDFConfig angleAutoPID = new PIDFConfig(0.4, 0, 0.01);
-
-    public static final double MAX_SPEED        = 0.5;
-    public static final double MAX_ACCELERATION = 2;
-  }
 }

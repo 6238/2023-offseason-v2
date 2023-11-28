@@ -9,7 +9,6 @@ import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPoint;
 import com.pathplanner.lib.auto.PIDConstants;
-import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,10 +19,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.RepeatCommand;
-import frc.robot.Constants.Auton;
 import frc.robot.subsystems.SwerveSubsystem;
+import swervelib.parser.PIDFConfig;
+import swervelib.parser.SwerveParser;
+
 import java.util.HashMap;
-import java.util.List;
 
 public final class Autos
 {
@@ -45,36 +45,21 @@ public final class Autos
   }
 
   /**
-   * Example static factory for an autonomous command.
+   * Static factory for a saved path group
    */
-  public static CommandBase exampleAuto(SwerveSubsystem swerve)
+  public static CommandBase autoPathGroup(SwerveSubsystem swerve)
   {
-    List<PathPlannerTrajectory> example1 = PathPlanner.loadPathGroup("SamplePath", new PathConstraints(0.25, 1));
     // This is just an example event map. It would be better to have a constant, global event map
     // in your code that will be used by all path following commands.
     HashMap<String, Command> eventMap = new HashMap<>();
     eventMap.put("marker1", new PrintCommand("Passed marker 1"));
 
-    // Create the AutoBuilder. This only needs to be created once when robot code starts, not every time you want
-    // to create an auto command. A good place to put this is in RobotContainer along with your subsystems.
-    SwerveAutoBuilder autoBuilder = new SwerveAutoBuilder(
-        swerve::getPose,
-// Pose2d supplier
-        swerve::resetOdometry,
-// Pose2d consumer, used to reset odometry at the beginning of auto
-        new PIDConstants(Auton.yAutoPID.p, Auton.yAutoPID.i, Auton.yAutoPID.d),
-// PID constants to correct for translation error (used to create the X and Y PID controllers)
-        new PIDConstants(Auton.angleAutoPID.p, Auton.angleAutoPID.i, Auton.angleAutoPID.d),
-// PID constants to correct for rotation error (used to create the rotation controller)
-        swerve::setChassisSpeeds,
-// Module states consumer used to output to the drive subsystem
-        eventMap,
-        false,
-// Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-        swerve
-// The drive subsystem. Used to properly set the requirements of path following commands
-    );
-    return Commands.sequence(autoBuilder.fullAuto(example1));
+    PIDFConfig drivePID = SwerveParser.pidfPropertiesJson.drive;
+    PIDConstants pcDrive = new PIDConstants(drivePID.p, drivePID.i, drivePID.d);
+    PIDFConfig anglePID = SwerveParser.pidfPropertiesJson.angle;
+    PIDConstants pcAngle = new PIDConstants(anglePID.p, anglePID.i, anglePID.d);
+
+    return Commands.sequence(swerve.createPathPlannerCommand("SamplePath", new PathConstraints(0.25, 1), eventMap, pcDrive, pcAngle, false));
   }
 
   /**
@@ -90,13 +75,10 @@ public final class Autos
   public static CommandBase driveToAprilTag(SwerveSubsystem swerve, int id, Rotation2d rotation,
                                             Rotation2d holonomicRotation, Translation2d offset)
   {
-    if (aprilTagField == null)
-    {
-      try
-      {
+    if (aprilTagField == null) {
+      try {
         aprilTagField = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
-      } catch (Exception ignored)
-      {
+      } catch (Exception ignored) {
         return null;
       }
     }
