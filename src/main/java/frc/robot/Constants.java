@@ -18,5 +18,4 @@ public final class Constants {
   }
 
   public static final double MAX_ANGULAR_VELOCITY = Math.PI; // Math.PI radians/sec
-  public static final double MAX_SPEED = 15.68; // Feet/second
 }

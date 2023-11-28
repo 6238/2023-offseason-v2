@@ -18,7 +18,6 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 
 import java.io.File;
 import java.util.List;
@@ -41,8 +40,9 @@ public class SwerveSubsystem extends SubsystemBase
   private final SwerveDrive swerveDrive;
   /**
    * Constants specific to the swerve modules
+   * See https://docs.wcproducts.com/wcp-swervex/general-info/ratio-options
    */
-  public double maximumSpeed = Units.feetToMeters(Constants.MAX_SPEED);
+  public double maximumSpeed = Units.feetToMeters(15.12);
   double wheelDiameter = 4.0; // Inches
   double driveGearRatio = 6.55;
   double steeringGearRatio = 10.29;
@@ -53,7 +53,7 @@ public class SwerveSubsystem extends SubsystemBase
    * The auto builder for PathPlanner, there can only ever be one created so we save it just incase we generate multiple
    * paths with events.
    */
-  private SwerveAutoBuilder autoBuilder  = null;
+  private SwerveAutoBuilder autoBuilder = null;
 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
