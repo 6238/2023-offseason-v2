@@ -200,7 +200,7 @@ public class SwerveSubsystem extends SubsystemBase
   }
 
   public void moveVerySlowly() {
-    setChassisSpeeds(new ChassisSpeeds(0.5, 0, 0));
+    setChassisSpeeds(new ChassisSpeeds(0, 0.5, 0));
   }
 
   /**

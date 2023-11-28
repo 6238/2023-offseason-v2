@@ -50,7 +50,7 @@ public class RobotContainer {
       swerveSubsystem,
       () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01),
       () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01),
-      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01));
+      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.05));
 
     swerveSubsystem.setDefaultCommand(driveCmd);
   }
