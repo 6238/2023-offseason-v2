@@ -18,12 +18,14 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
+import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveControllerConfiguration;
 import swervelib.parser.SwerveDriveConfiguration;
 import swervelib.parser.SwerveParser;
@@ -36,11 +38,17 @@ public class SwerveSubsystem extends SubsystemBase
   /**
    * Swerve drive object.
    */
-  private final SwerveDrive       swerveDrive;
+  private final SwerveDrive swerveDrive;
   /**
-   * Maximum speed of the robot in meters per second, used to limit acceleration.
+   * Constants specific to the swerve modules
    */
-  public  double            maximumSpeed = Units.feetToMeters(14.5);
+  public double maximumSpeed = Units.feetToMeters(Constants.MAX_SPEED);
+  double wheelDiameter = 4.0; // Inches
+  double driveGearRatio = 6.55;
+  double steeringGearRatio = 10.29;
+  double driveEncoderResolution = 1.0;
+  double steeringEncoderResolution = 1.0;
+
   /**
    * The auto builder for PathPlanner, there can only ever be one created so we save it just incase we generate multiple
    * paths with events.
@@ -72,9 +80,13 @@ public class SwerveSubsystem extends SubsystemBase
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed);
+      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed);
       // Alternative method if you don't want to supply the conversion factor via JSON files.
-    //   swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
+
+      double driveConversionFactor = SwerveMath.calculateMetersPerRotation(Units.inchesToMeters(wheelDiameter), driveGearRatio, driveEncoderResolution);
+      System.out.println("METERS PER ROTATION " + driveConversionFactor);
+      double steeringConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(steeringGearRatio, steeringEncoderResolution);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, steeringConversionFactor, driveConversionFactor);
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -185,6 +197,10 @@ public class SwerveSubsystem extends SubsystemBase
   public void setChassisSpeeds(ChassisSpeeds chassisSpeeds)
   {
     swerveDrive.setChassisSpeeds(chassisSpeeds);
+  }
+
+  public void moveVerySlowly() {
+    setChassisSpeeds(new ChassisSpeeds(0.5, 0, 0));
   }
 
   /**
@@ -340,7 +356,7 @@ public class SwerveSubsystem extends SubsystemBase
    * @param useAllianceColor Automatically transform the path based on alliance color.
    * @return PathPlanner command to follow the given path.
    */
-  public Command creatPathPlannerCommand(String path, PathConstraints constraints, Map<String, Command> eventMap,
+  public Command createPathPlannerCommand(String path, PathConstraints constraints, Map<String, Command> eventMap,
                                          PIDConstants translation, PIDConstants rotation, boolean useAllianceColor)
   {
     List<PathPlannerTrajectory> pathGroup = PathPlanner.loadPathGroup(path, constraints);

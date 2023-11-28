@@ -11,6 +11,7 @@ import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -49,8 +50,7 @@ public class RobotContainer {
       swerveSubsystem,
       () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01),
       () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01),
-      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01),
-      () -> MathUtil.applyDeadband(driverXbox.getRightY(), 0.01));
+      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01));
 
     swerveSubsystem.setDefaultCommand(driveCmd);
   }
@@ -74,6 +74,7 @@ public class RobotContainer {
     // m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
 
     new JoystickButton(driverXbox, XboxController.Button.kStart.value).onTrue((new InstantCommand(swerveSubsystem::zeroGyro)));
+    new JoystickButton(driverXbox, XboxController.Button.kX.value).whileTrue(new RepeatCommand(new InstantCommand(swerveSubsystem::moveVerySlowly)));
   }
 
   /**
@@ -83,6 +84,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
+    return Autos.exampleAuto(swerveSubsystem);
   }
 }
