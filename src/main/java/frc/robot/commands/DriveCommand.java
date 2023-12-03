@@ -5,6 +5,7 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
+import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class DriveCommand extends CommandBase {
@@ -28,8 +29,8 @@ public class DriveCommand extends CommandBase {
     @Override
     public void execute() {
         // Read from joysticks
-        double driveX = vX.getAsDouble();
-        double driveY = vY.getAsDouble();
+        double driveY = Math.pow(vY.getAsDouble(), 3) * OperatorConstants.JOYSTICK_SCALE;
+        double driveX = Math.pow(vX.getAsDouble(), 3) * OperatorConstants.JOYSTICK_SCALE;
         double rotation = rotationSpeed.getAsDouble();
 
         Translation2d translation = new Translation2d(driveX * subsys.maximumSpeed, driveY * subsys.maximumSpeed);

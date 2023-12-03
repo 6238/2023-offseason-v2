@@ -15,7 +15,12 @@ package frc.robot;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
+    /**
+     * Scale factor for the drive joystick inputs. Can be reduced for practice.
+     */
+    public static final double JOYSTICK_SCALE = 1.02;
   }
 
   public static final double MAX_ANGULAR_VELOCITY = Math.PI; // Math.PI radians/sec
+
 }
