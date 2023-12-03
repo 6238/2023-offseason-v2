@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.ExampleCommand;
@@ -12,6 +11,7 @@ import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -19,11 +19,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.io.File;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
-import swervelib.parser.SwerveParser;
-import swervelib.SwerveDrive;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -44,14 +41,16 @@ public class RobotContainer {
 
   XboxController driverXbox = new XboxController(0);
 
-  
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
 
-    DriveCommand driveCmd = new DriveCommand(swerveSubsystem, () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.01), () -> MathUtil.applyDeadband(driverXbox.getRightY(), 0.01));
+    DriveCommand driveCmd = new DriveCommand(
+      swerveSubsystem,
+      () -> MathUtil.applyDeadband(-driverXbox.getLeftX(), 0.01),
+      () -> MathUtil.applyDeadband(driverXbox.getLeftY(), 0.01),
+      () -> MathUtil.applyDeadband(driverXbox.getRightX(), 0.05));
 
     swerveSubsystem.setDefaultCommand(driveCmd);
   }
@@ -75,6 +74,7 @@ public class RobotContainer {
     // m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
 
     new JoystickButton(driverXbox, XboxController.Button.kStart.value).onTrue((new InstantCommand(swerveSubsystem::zeroGyro)));
+    new JoystickButton(driverXbox, XboxController.Button.kX.value).whileTrue(new RepeatCommand(new InstantCommand(swerveSubsystem::moveVerySlowly)));
   }
 
   /**
@@ -84,6 +84,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
+    return Autos.autoPathGroup(swerveSubsystem);
   }
 }

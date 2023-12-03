@@ -1,5 +1,7 @@
 package swervelib;
 
+import com.revrobotics.CANSparkMax;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -207,6 +209,9 @@ public class SwerveModule
     {
       SmartDashboard.putNumber("Module[" + configuration.name + "] Speed Setpoint:", desiredState.speedMetersPerSecond);
       SmartDashboard.putNumber("Module[" + configuration.name + "] Angle Setpoint:", desiredState.angle.getDegrees());
+      SmartDashboard.putNumber("Module[" + configuration.name + "] Speed Measured:", driveMotor.getVelocity());
+      SmartDashboard.putNumber("Module[" + configuration.name + "] Drive Output:", ((CANSparkMax) driveMotor.getMotor()).getAppliedOutput());
+      SmartDashboard.putNumber("Module[" + configuration.name + "] Feedforward: ", feedforward.calculate(desiredState.speedMetersPerSecond));
     }
 
     // Prevent module rotation if angle is the same as the previous angle.

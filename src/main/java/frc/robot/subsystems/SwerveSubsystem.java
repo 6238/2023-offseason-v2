@@ -16,7 +16,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -38,16 +37,23 @@ public class SwerveSubsystem extends SubsystemBase
   /**
    * Swerve drive object.
    */
-  private final SwerveDrive       swerveDrive;
+  private final SwerveDrive swerveDrive;
   /**
-   * Maximum speed of the robot in meters per second, used to limit acceleration.
+   * Constants specific to the swerve modules
+   * See https://docs.wcproducts.com/wcp-swervex/general-info/ratio-options
    */
-  public  double            maximumSpeed = Units.feetToMeters(14.5);
+  public double maximumSpeed = Units.feetToMeters(15.12);
+  double wheelDiameter = 4.0; // Inches
+  double driveGearRatio = 6.55;
+  double steeringGearRatio = 10.29;
+  double driveEncoderResolution = 1.0;
+  double steeringEncoderResolution = 1.0;
+
   /**
    * The auto builder for PathPlanner, there can only ever be one created so we save it just incase we generate multiple
    * paths with events.
    */
-  private SwerveAutoBuilder autoBuilder  = null;
+  private SwerveAutoBuilder autoBuilder = null;
 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -74,9 +80,13 @@ public class SwerveSubsystem extends SubsystemBase
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed);
+      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed);
       // Alternative method if you don't want to supply the conversion factor via JSON files.
-    //   swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
+
+      double driveConversionFactor = SwerveMath.calculateMetersPerRotation(Units.inchesToMeters(wheelDiameter), driveGearRatio, driveEncoderResolution);
+      System.out.println("METERS PER ROTATION " + driveConversionFactor);
+      double steeringConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(steeringGearRatio, steeringEncoderResolution);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, steeringConversionFactor, driveConversionFactor);
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -189,6 +199,10 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setChassisSpeeds(chassisSpeeds);
   }
 
+  public void moveVerySlowly() {
+    setChassisSpeeds(new ChassisSpeeds(0, 0.5, 0));
+  }
+
   /**
    * Post the trajectory to the field.
    *
@@ -241,7 +255,8 @@ public class SwerveSubsystem extends SubsystemBase
   {
     xInput = Math.pow(xInput, 3);
     yInput = Math.pow(yInput, 3);
-    return swerveDrive.swerveController.getTargetSpeeds(xInput, yInput, headingX, headingY, getHeading().getRadians(), maximumSpeed);  }
+    return swerveDrive.swerveController.getTargetSpeeds(xInput, yInput, headingX, headingY, getHeading().getRadians(), maximumSpeed);
+  }
 
   /**
    * Get the chassis speeds based on controller input of 1 joystick and one angle.
@@ -341,7 +356,7 @@ public class SwerveSubsystem extends SubsystemBase
    * @param useAllianceColor Automatically transform the path based on alliance color.
    * @return PathPlanner command to follow the given path.
    */
-  public Command creatPathPlannerCommand(String path, PathConstraints constraints, Map<String, Command> eventMap,
+  public Command createPathPlannerCommand(String path, PathConstraints constraints, Map<String, Command> eventMap,
                                          PIDConstants translation, PIDConstants rotation, boolean useAllianceColor)
   {
     List<PathPlannerTrajectory> pathGroup = PathPlanner.loadPathGroup(path, constraints);
