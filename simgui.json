@@ -7,6 +7,8 @@
     },
     "windows": {
       "/SmartDashboard/Field": {
+        "height": 15.979999542236328,
+        "width": 8.210000038146973,
         "window": {
           "visible": true
         }

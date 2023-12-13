@@ -104,7 +104,7 @@ public class SwerveDrive
   /**
    * Whether to correct heading when driving translationally. Set to true to enable.
    */
-  public        boolean        headingCorrection                               = false;
+  public        boolean        headingCorrection                               = true;
   /**
    * Swerve IMU device for sensing the heading of the robot.
    */
@@ -669,6 +669,11 @@ public class SwerveDrive
     }
   }
 
+  public Rotation3d getRotation3d()
+  {
+    return imu.getRotation3d();
+  }
+
   /**
    * Gets the current pitch angle of the robot, as reported by the imu.
    *
@@ -891,6 +896,11 @@ public class SwerveDrive
       {
         field.setRobotPose(swerveDrivePoseEstimator.getEstimatedPosition());
       }
+
+      SmartDashboard.putNumber("Estimated Angle", -getYaw().getDegrees());
+      SmartDashboard.putNumber("IMU X", getRotation3d().getX());
+      SmartDashboard.putNumber("IMU Y", getRotation3d().getY());
+      SmartDashboard.putNumber("IMU Z", getRotation3d().getZ());
 
       double sumVelocity = 0;
       for (SwerveModule module : swerveModules)
