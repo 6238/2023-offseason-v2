@@ -29,8 +29,8 @@ public class DriveCommand extends CommandBase {
     @Override
     public void execute() {
         // Read from joysticks
-        double driveY = Math.pow(vY.getAsDouble(), 3) * OperatorConstants.JOYSTICK_SCALE;
-        double driveX = Math.pow(vX.getAsDouble(), 3) * OperatorConstants.JOYSTICK_SCALE;
+        double driveY = Math.pow(vY.getAsDouble(), 1) * OperatorConstants.JOYSTICK_SCALE;
+        double driveX = Math.pow(vX.getAsDouble(), 1) * OperatorConstants.JOYSTICK_SCALE;
         double rotation = rotationSpeed.getAsDouble();
 
         Translation2d translation = new Translation2d(driveX * subsys.maximumSpeed, driveY * subsys.maximumSpeed);

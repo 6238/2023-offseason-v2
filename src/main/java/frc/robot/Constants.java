@@ -18,7 +18,7 @@ public final class Constants {
     /**
      * Scale factor for the drive joystick inputs. Can be reduced for practice.
      */
-    public static final double JOYSTICK_SCALE = 1.02;
+    public static final double JOYSTICK_SCALE = 1.0;
   }
 
   public static final double MAX_ANGULAR_VELOCITY = Math.PI; // Math.PI radians/sec
