@@ -898,9 +898,6 @@ public class SwerveDrive
       }
 
       SmartDashboard.putNumber("Estimated Angle", -getYaw().getDegrees());
-      SmartDashboard.putNumber("IMU X", getRotation3d().getX());
-      SmartDashboard.putNumber("IMU Y", getRotation3d().getY());
-      SmartDashboard.putNumber("IMU Z", getRotation3d().getZ());
 
       double sumVelocity = 0;
       for (SwerveModule module : swerveModules)
