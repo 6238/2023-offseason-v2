@@ -84,7 +84,6 @@ public class SwerveSubsystem extends SubsystemBase
       // Alternative method if you don't want to supply the conversion factor via JSON files.
 
       double driveConversionFactor = SwerveMath.calculateMetersPerRotation(Units.inchesToMeters(wheelDiameter), driveGearRatio, driveEncoderResolution);
-      System.out.println("METERS PER ROTATION " + driveConversionFactor);
       double steeringConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(steeringGearRatio, steeringEncoderResolution);
       swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, steeringConversionFactor, driveConversionFactor);
     } catch (Exception e)
