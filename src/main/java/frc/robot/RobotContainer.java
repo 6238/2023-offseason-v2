@@ -14,14 +14,12 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 import java.io.File;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.XboxController;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -35,7 +33,7 @@ public class RobotContainer {
 
   File jsonDirectory;
 
-  XboxController driverXbox = new XboxController(0);
+  CommandXboxController driverXbox = new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -69,10 +67,10 @@ public class RobotContainer {
     // cancelling on rel 
     // m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
 
-    new JoystickButton(driverXbox, XboxController.Button.kStart.value).onTrue((new InstantCommand(swerveSubsystem::zeroGyro)));
-    new JoystickButton(driverXbox, XboxController.Button.kX.value).whileTrue(new RepeatCommand(new InstantCommand(swerveSubsystem::moveVerySlowly)));
-    new JoystickButton(driverXbox, XboxController.Button.kA.value).onTrue(new RotationTestCommand(swerveSubsystem));
-    new JoystickButton(driverXbox, XboxController.Button.kB.value).onTrue(new SequentialCommandGroup(
+    driverXbox.start().onTrue((new InstantCommand(swerveSubsystem::zeroGyro)));
+    driverXbox.x().whileTrue(new RepeatCommand(new InstantCommand(swerveSubsystem::moveVerySlowly)));
+    driverXbox.a().onTrue(new RotationTestCommand(swerveSubsystem));
+    driverXbox.b().onTrue(new SequentialCommandGroup(
       new DriveFixedDistanceCommand(swerveSubsystem, 1, 0, 1),
       new DriveFixedDistanceCommand(swerveSubsystem, 1, 90, 1),
       new DriveFixedDistanceCommand(swerveSubsystem, 1, 180, 1),
