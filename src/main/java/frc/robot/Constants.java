@@ -21,6 +21,6 @@ public final class Constants {
     public static final double JOYSTICK_SCALE = 1.0;
   }
 
-  public static final double MAX_ANGULAR_VELOCITY = Math.PI; // Math.PI radians/sec
+  public static final double MAX_ANGULAR_VELOCITY = 2 * Math.PI; // Math.PI radians/sec
 
 }
